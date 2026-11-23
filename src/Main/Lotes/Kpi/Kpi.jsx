@@ -1,0 +1,3 @@
+function Kpi(idLote){
+    
+}

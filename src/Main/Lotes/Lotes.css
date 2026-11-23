@@ -1,0 +1,554 @@
+/* ==========================================
+   CONTENIDO PRINCIPAL
+   ========================================== */
+.main-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px 48px;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 28px 0 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-texto);
+  letter-spacing: -0.3px;
+}
+
+.page-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-texto-secundario);
+  margin-top: 2px;
+}
+
+/* ==========================================
+   BOTÓN NUEVO LOTE
+   ========================================== */
+.btn-nuevo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-texto);
+  color: #ffffff;
+  border: none;
+  padding: 11px 20px;
+  border-radius: var(--radio-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transicion);
+  white-space: nowrap;
+}
+
+.btn-nuevo:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: var(--sombra-md);
+}
+
+.btn-nuevo:active {
+  transform: translateY(0);
+}
+
+.btn-nuevo .icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* ==========================================
+   GRID DE CARDS Y CARD DE LOTE
+   ========================================== */
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+.lote-card {
+  background: var(--color-blanco);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-xl);
+  overflow: hidden;
+  transition: var(--transicion);
+  cursor: pointer;
+  animation: fadeInUp 0.4s ease both;
+}
+
+.lote-card:hover {
+  border-color: var(--color-borde-hover);
+  transform: translateY(-3px);
+  box-shadow: var(--sombra-lg);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-img {
+  width: 100%;
+  height: 130px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.card-img svg {
+  width: 48px;
+  height: 48px;
+  opacity: 0.45;
+  color: var(--color-amarillo, #f59e0b);
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.badge.activo {
+  background: var(--color-verde-claro);
+  color: var(--color-verde-oscuro);
+}
+
+.badge.inactivo,
+.badge.finalizado {
+  background: #f3f4f6;
+  color: var(--color-texto-secundario);
+}
+
+.card-body {
+  padding: 16px 18px 18px;
+}
+
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.card-id {
+  font-size: 11px;
+  color: var(--color-texto-terciario);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.card-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-texto);
+  margin-bottom: 14px;
+  letter-spacing: -0.2px;
+}
+
+.lote-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  background: #f1f5f9;
+  border-radius: var(--radio-sm);
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.info-label {
+  font-size: 10px;
+  color: var(--color-texto-secundario);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.info-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-texto);
+}
+
+.lote-aves-section {
+  margin-bottom: 4px;
+}
+
+.aves-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.aves-label {
+  font-size: 13px;
+  color: var(--color-texto-secundario);
+  font-weight: 500;
+}
+
+.aves-label strong {
+  color: var(--color-texto);
+  font-weight: 700;
+}
+
+.porcentaje-texto {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-texto);
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-verde) 0%, #22c55e 100%);
+  border-radius: 4px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================
+   SKELETON Y ESTADO VACÍO
+   ========================================== */
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 20px;
+}
+
+.skeleton-card {
+  background: var(--color-blanco);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-xl);
+  overflow: hidden;
+}
+
+.skeleton-img {
+  width: 100%;
+  height: 130px;
+  background: #e2e8f0;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+.skeleton-body {
+  padding: 18px;
+  height: 180px;
+  background: linear-gradient(to bottom, var(--color-blanco) 0%, #e2e8f0 100%);
+  animation: pulse 1.8s ease-in-out infinite;
+  animation-delay: 0.2s;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.estado-vacio {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 80px 24px;
+  color: var(--color-texto-secundario);
+  background: var(--color-blanco);
+  border: 1px dashed var(--color-borde-hover);
+  border-radius: var(--radio-xl);
+}
+
+.estado-vacio svg {
+  width: 64px;
+  height: 64px;
+  opacity: 0.35;
+  margin-bottom: 16px;
+  color: var(--color-texto);
+}
+
+.estado-vacio h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-texto);
+  margin-bottom: 6px;
+}
+
+/* ==========================================
+   MODAL
+   ========================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.modal {
+  background: var(--color-blanco);
+  border-radius: 18px;
+  padding: 28px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  animation: fadeInUp 0.25s ease;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.modal-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-texto);
+}
+
+.btn-cerrar-modal {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: #f3f4f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-texto-secundario);
+  transition: var(--transicion);
+}
+
+.btn-cerrar-modal:hover {
+  background: #e5e7eb;
+  color: var(--color-texto);
+}
+
+.btn-cerrar-modal svg {
+  width: 16px;
+  height: 16px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.full-width {
+  grid-column: span 2;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-texto-secundario);
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 11px 15px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-md);
+  font-size: 14px;
+  background: var(--color-blanco);
+  color: var(--color-texto);
+  transition: var(--transicion);
+  outline: none;
+  font-family: inherit;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--color-texto);
+  box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn-guardar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--color-verde);
+  color: #ffffff;
+  border: none;
+  padding: 11px 24px;
+  border-radius: var(--radio-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transicion);
+  min-height: 44px;
+  min-width: 120px;
+}
+
+.btn-guardar:hover:not(:disabled) {
+  background: var(--color-verde-oscuro);
+}
+
+.btn-guardar:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-spinner {
+  display: inline-flex;
+  animation: spin 1s linear infinite;
+}
+
+.btn-spinner svg {
+  width: 16px;
+  height: 16px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.btn-cancelar {
+  background: #f3f4f6;
+  color: var(--color-texto-secundario);
+  border: 1px solid var(--color-borde);
+  padding: 11px 24px;
+  border-radius: var(--radio-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transicion);
+  min-height: 44px;
+}
+
+.btn-cancelar:hover {
+  background: #e5e7eb;
+  color: var(--color-texto);
+}
+
+/* ==========================================
+   TOAST
+   ========================================== */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--color-texto);
+  color: #ffffff;
+  padding: 12px 18px;
+  border-radius: var(--radio-lg);
+  font-size: 0.88rem;
+  font-weight: 600;
+  box-shadow: var(--sombra-lg);
+  transform: translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: var(--transicion);
+  z-index: 300;
+}
+
+.toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.toast.error {
+  background: #dc2626;
+}
+
+.toast-icon {
+  width: 18px;
+  height: 18px;
+  color: #4ade80;
+  flex-shrink: 0;
+}
+
+.toast.error .toast-icon {
+  color: #fecaca;
+}
+
+@media (max-width: 640px) {
+  .main-container {
+    padding: 0 16px 40px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .full-width {
+    grid-column: span 1;
+  }
+}
