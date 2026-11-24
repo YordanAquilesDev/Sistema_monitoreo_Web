@@ -1,3 +1,5 @@
+
+import "./NavLote.css"
 const TABS_LOTE = [
   { id: "general", label: "General" },
   { id: "gastos", label: "Gastos" },
