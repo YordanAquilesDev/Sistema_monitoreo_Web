@@ -1,0 +1,229 @@
+.registros-wrapper {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.registros-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-borde, #e2e8f0);
+}
+
+.registros-titulo {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-texto, #0f172a);
+  margin: 0 0 4px;
+}
+
+.registros-subtitulo {
+  font-size: 0.85rem;
+  color: var(--color-texto-secundario, #64748b);
+  margin: 0;
+}
+
+.registros-resumen {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.registro-pill {
+  background: #f8fafc;
+  border: 1px solid var(--color-borde, #e2e8f0);
+  border-radius: 10px;
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.registro-pill.alerta {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.registro-pill-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.registro-pill-valor {
+  font-size: 0.98rem;
+  color: #0f172a;
+}
+
+.registro-pill.alerta .registro-pill-valor {
+  color: #b91c1c;
+}
+
+/* Grid */
+.registros-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(265px, 1fr));
+  gap: 14px;
+}
+
+.registro-card {
+  background: #ffffff;
+  border: 1px solid var(--color-borde, #e2e8f0);
+  border-top: 3px solid #16a34a;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.registro-card.alerta {
+  border-top-color: #d97706;
+}
+
+.registro-card.critico {
+  border-top-color: #dc2626;
+}
+
+.registro-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+}
+
+.registro-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.registro-id {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.registro-fecha {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.registro-muertes-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.registro-muertes-label {
+  font-size: 0.8rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+.registro-muertes-valor-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.registro-muertes-valor {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #15803d;
+}
+
+.registro-muertes-valor.alerta {
+  color: #b45309;
+}
+
+.registro-muertes-valor.critico {
+  color: #dc2626;
+}
+
+.registro-muertes-unidad {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.registro-obs {
+  border-top: 1px solid #f1f5f9;
+  padding-top: 10px;
+}
+
+.registro-obs-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.registro-obs-texto {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #334155;
+  line-height: 1.4;
+}
+
+/* Estados */
+.registros-mensaje {
+  padding: 28px 18px;
+  text-align: center;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  color: #64748b;
+}
+
+.registros-mensaje.error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.btn-reintentar-registro {
+  margin-top: 10px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid #fca5a5;
+  background: #ffffff;
+  color: #b91c1c;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.registro-skeleton {
+  height: 145px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: registroShimmer 1.4s infinite;
+}
+
+@keyframes registroShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

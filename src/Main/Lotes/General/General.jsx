@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { apiServer } from "../../../utils/apiServer";
 import NavLote from "./NavLote";
 import "./General.css";
+import Gastos from "../Gastos/Gastos";
+import Pesos from "../Pesos/Pesos";
+import Registros from "../Registros/Registros";
 
 function IconoCalendario() {
   return (
@@ -19,24 +22,6 @@ function IconoCalendario() {
       <line x1="16" y1="2" x2="16" y2="6" />
       <line x1="8" y1="2" x2="8" y2="6" />
       <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  );
-}
-
-function IconoMeta() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
     </svg>
   );
 }
@@ -63,7 +48,7 @@ function formatearFecha(fechaStr) {
   if (!fechaStr) return null;
   const d = new Date(fechaStr);
   if (Number.isNaN(d.getTime())) return fechaStr;
-  return d.toLocaleDateString("es-ES", {
+  return d.toLocaleDateString("es-PE", {
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -71,50 +56,56 @@ function formatearFecha(fechaStr) {
 }
 
 function DetalleGeneral({ lote }) {
-  const estadoTexto = lote.estado === true ? "Activo" : "Inactivo";
-  const estadoClase = lote.estado === true ? "activo" : "inactivo";
+  const estadoActivo = Boolean(lote.estado);
+  const estadoTexto = estadoActivo ? "Activo" : "Inactivo";
+  const estadoClase = estadoActivo ? "activo" : "inactivo";
 
-  const fechaInicio = formatearFecha(lote.lote_fecha_inicio);
-  const fechaVenta = formatearFecha(lote.lote_fecha_venta);
+  const fechaIngreso = formatearFecha(lote.fecha_ingreso);
+
+  const cantidadInicial = Number(lote.cantidad_inicial ?? 0);
+  const cantidadActual = Number(lote.cantidad_actual ?? 0);
+  const muertes =
+    lote.muertes != null
+      ? Number(lote.muertes)
+      : Math.max(0, cantidadInicial - cantidadActual);
+
+  const pctMuerteNum =
+    cantidadInicial > 0 ? (muertes / cantidadInicial) * 100 : 0;
+  const pcrtMuerte = pctMuerteNum.toFixed(2);
 
   const pesoInicial =
-    lote.lote_peso_inicial != null ? Number(lote.lote_peso_inicial).toFixed(3) : "—";
+    lote.peso_inicial != null ? Number(lote.peso_inicial).toFixed(3) : "—";
   const pesoActual =
-    lote.lote_peso_actual != null ? Number(lote.lote_peso_actual).toFixed(2) : "—";
+    lote.peso_actual != null ? Number(lote.peso_actual).toFixed(2) : "—";
   const precioPollito =
-    lote.lote_precio_pollito != null
-      ? Number(lote.lote_precio_pollito).toFixed(2)
+    lote.precio_pollito_base != null
+      ? Number(lote.precio_pollito_base).toFixed(2)
       : "—";
-  const costoKg =
-    lote.lote_costo_kg_carne != null
-      ? Number(lote.lote_costo_kg_carne).toFixed(2)
+  const costoProduccion =
+    lote.costo_produccion != null
+      ? Number(lote.costo_produccion).toFixed(2)
       : "—";
-  const pcrtMuerte =
-    lote.lote_pcrt_muerte != null
-      ? Number(lote.lote_pcrt_muerte).toFixed(2)
-      : "0.00";
-  const muertes = lote.lote_muertes != null ? Number(lote.lote_muertes) : 0;
-  const diasProd = lote.dias_produccion != null ? Number(lote.dias_produccion) : 0;
+  const diasProd =
+    lote.dias_produccion != null ? Number(lote.dias_produccion) : 0;
   const loteIdFormateado =
     lote.lote_id != null ? String(lote.lote_id).padStart(3, "0") : "—";
 
-  const cantidadInicial = Number(lote.lote_cantidad ?? 0);
-  const cantidadActual = Number(lote.lote_cantidad_actual ?? 0);
-
-  const pctMuerte = parseFloat(pcrtMuerte);
-  let barraColor = "var(--color-verde, #16a34a)";
-  if (pctMuerte > 2) barraColor = "#d97706";
-  if (pctMuerte > 5) barraColor = "#dc2626";
+  let barraColor = "#16a34a";
+  if (pctMuerteNum > 2) barraColor = "#d97706";
+  if (pctMuerteNum > 5) barraColor = "#dc2626";
 
   return (
     <div id="contenedor-detalle-lote" className="detalle-container">
       {/* HEADER */}
       <div className="detalle-header">
         <div>
-          <div className="detalle-titulo">{lote.lote_nombre || "Lote"}</div>
+          <div className="detalle-titulo">
+            Lote #{loteIdFormateado} — {lote.galpon || "Sin galpón"}
+          </div>
           <div className="detalle-subtitulo">
             <IconoCasa />
-            <span>{lote.galpon_nombre || "—"}</span>
+            <span>{lote.galpon || "—"}</span>
+            <span>•</span>
             <span>{diasProd} días</span>
           </div>
         </div>
@@ -126,26 +117,28 @@ function DetalleGeneral({ lote }) {
 
       {/* CANTIDADES */}
       <div className="seccion">
-        <div className="seccion-titulo">Cantidades</div>
+        <div className="seccion-titulo">Cantidades y mortalidad</div>
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-label">Cantidad inicial</div>
             <div className="stat-value">
-              {cantidadInicial.toLocaleString("es-ES")}
+              {cantidadInicial.toLocaleString("es-PE")}
             </div>
             <div className="stat-unit">pollitos</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">Cantidad actual</div>
             <div className="stat-value">
-              {cantidadActual.toLocaleString("es-ES")}
+              {cantidadActual.toLocaleString("es-PE")}
             </div>
             <div className="stat-unit">pollitos</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">Mortalidad</div>
-            <div className="stat-value danger">{muertes.toLocaleString("es-ES")}</div>
-            <div className="stat-unit">perdidas</div>
+            <div className="stat-value danger">
+              {muertes.toLocaleString("es-PE")}
+            </div>
+            <div className="stat-unit">aves</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">% Mortalidad</div>
@@ -154,7 +147,7 @@ function DetalleGeneral({ lote }) {
               <div
                 className="mortalidad-barra-fill"
                 style={{
-                  width: `${Math.min(pctMuerte * 5, 100)}%`,
+                  width: `${Math.min(pctMuerteNum * 5, 100)}%`,
                   background: barraColor,
                 }}
               />
@@ -163,19 +156,19 @@ function DetalleGeneral({ lote }) {
         </div>
       </div>
 
-      {/* PRECIOS Y PESOS */}
+      {/* COSTOS Y PESOS */}
       <div className="seccion">
-        <div className="seccion-titulo">Precios y pesos</div>
+        <div className="seccion-titulo">Costos y pesos</div>
         <div className="stats-grid">
           <div className="stat-card">
-            <div className="stat-label">Precio unitario</div>
+            <div className="stat-label">Precio pollito base</div>
             <div className="stat-value">S/ {precioPollito}</div>
-            <div className="stat-unit">por pollito</div>
+            <div className="stat-unit">por unidad</div>
           </div>
           <div className="stat-card">
-            <div className="stat-label">Costo kg carne</div>
-            <div className="stat-value">S/ {costoKg}</div>
-            <div className="stat-unit">por kilogramo</div>
+            <div className="stat-label">Costo de producción</div>
+            <div className="stat-value">S/ {costoProduccion}</div>
+            <div className="stat-unit">acumulado</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">Peso inicial</div>
@@ -195,23 +188,12 @@ function DetalleGeneral({ lote }) {
         <div className="seccion-titulo">Fechas importantes</div>
         <div className="fechas-row">
           <div className="fecha-card">
-            <div className="fecha-icon-wrap entrada" style={{ color: "#3b82f6" }}>
+            <div className="fecha-icon-wrap entrada">
               <IconoCalendario />
             </div>
             <div>
               <div className="fecha-label">Fecha de ingreso</div>
-              <div className="fecha-value">{fechaInicio || "—"}</div>
-            </div>
-          </div>
-          <div className="fecha-card">
-            <div className="fecha-icon-wrap venta" style={{ color: "#d97706" }}>
-              <IconoMeta />
-            </div>
-            <div>
-              <div className="fecha-label">Fecha de venta</div>
-              <div className={`fecha-value ${!fechaVenta ? "pendiente" : ""}`}>
-                {fechaVenta || "Pendiente"}
-              </div>
+              <div className="fecha-value">{fechaIngreso || "—"}</div>
             </div>
           </div>
         </div>
@@ -227,18 +209,11 @@ function DetalleGeneral({ lote }) {
           </div>
           <div className="info-item">
             <span className="info-label">Galpón asignado</span>
-            <span className="info-value">{lote.galpon_nombre || "—"}</span>
+            <span className="info-value">{lote.galpon || "—"}</span>
           </div>
           <div className="info-item">
             <span className="info-label">Estado</span>
-            <span
-              className="info-value"
-              style={{
-                color: lote.estado
-                  ? "var(--color-verde, #16a34a)"
-                  : "var(--color-texto-secundario, #6b7280)",
-              }}
-            >
+            <span className={`info-value estado-texto ${estadoClase}`}>
               {estadoTexto}
             </span>
           </div>
@@ -248,17 +223,6 @@ function DetalleGeneral({ lote }) {
           </div>
         </div>
       </div>
-
-      {/* OBSERVACIONES */}
-      {lote.observaciones && (
-        <div className="seccion">
-          <div className="seccion-titulo">Observaciones</div>
-          <div className="observaciones-box">
-            <div className="obs-titulo">Notas del lote</div>
-            <div className="obs-texto">{lote.observaciones}</div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -311,7 +275,7 @@ export default function General({ idLote, onVolver }) {
       setError(null);
 
       try {
-        const datos = await apiServer(`Info/${idLote}`);
+        const datos = await apiServer(`lotes/${idLote}`);
         if (!active) return;
         const detalle = datos?.data ?? datos;
         if (!detalle || typeof detalle !== "object") {
@@ -388,10 +352,23 @@ export default function General({ idLote, onVolver }) {
         </>
       )}
 
-      {tabActiva !== "general" && (
+      {tabActiva === "gastos" && (
         <div className="estado-vacio">
-          <h3>Sección "{tabActiva}" — Lote #{idLote}</h3>
-          <p>Este módulo está listo para conectarse a su componente.</p>
+          <Gastos idLote={idLote} />
+        </div>
+      )}
+
+      {tabActiva === "pesajes" && (
+        <div className="estado-vacio">
+          Mostrar el historial de pesajes del lote seleccionado
+          <Pesos idLote={idLote} />
+        </div>
+      )}
+
+      {tabActiva === "registros" && (
+        <div className="estado-vacio">
+          Mostrar historial de registros del lote seleccionado
+          <Registros idLote={idLote} />
         </div>
       )}
 
