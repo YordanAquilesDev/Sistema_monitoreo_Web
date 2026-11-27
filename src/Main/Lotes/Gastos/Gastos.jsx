@@ -137,7 +137,10 @@ function Gastos({ idLote }) {
           ))}
         </div>
       )}
+
+      
     </section>
+
   );
 }
 
