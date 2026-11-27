@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiServer } from "../../../utils/apiServer";
 import NavLote from "./NavLote";
 import "./General.css";
@@ -6,224 +6,184 @@ import Gastos from "../Gastos/Gastos";
 import Pesos from "../Pesos/Pesos";
 import Registros from "../Registros/Registros";
 
-function IconoCalendario() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  );
-}
-
-function IconoCasa() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  );
-}
-
 function formatearFecha(fechaStr) {
-  if (!fechaStr) return null;
+  if (!fechaStr) return "—";
   const d = new Date(fechaStr);
-  if (Number.isNaN(d.getTime())) return fechaStr;
+  if (Number.isNaN(d.getTime())) return String(fechaStr);
   return d.toLocaleDateString("es-PE", {
     day: "2-digit",
-    month: "long",
+    month: "short",
     year: "numeric",
   });
 }
 
+function formatoMoneda(valor, decimales = 2) {
+  if (valor == null || Number.isNaN(Number(valor))) return "—";
+  return `S/ ${Number(valor).toLocaleString("es-PE", {
+    minimumFractionDigits: decimales,
+    maximumFractionDigits: decimales,
+  })}`;
+}
+
+function formatoNumero(valor, decimales = 0) {
+  if (valor == null || Number.isNaN(Number(valor))) return "—";
+  return Number(valor).toLocaleString("es-PE", {
+    minimumFractionDigits: decimales,
+    maximumFractionDigits: decimales,
+  });
+}
+
 function DetalleGeneral({ lote }) {
-  const estadoActivo = Boolean(lote.estado);
-  const estadoTexto = estadoActivo ? "Activo" : "Inactivo";
-  const estadoClase = estadoActivo ? "activo" : "inactivo";
-
-  const fechaIngreso = formatearFecha(lote.fecha_ingreso);
-
-  const cantidadInicial = Number(lote.cantidad_inicial ?? 0);
-  const cantidadActual = Number(lote.cantidad_actual ?? 0);
+  const activo = Boolean(lote.estado);
+  const inicial = Number(lote.cantidad_inicial ?? 0);
+  const actual = Number(lote.cantidad_actual ?? 0);
   const muertes =
-    lote.muertes != null
-      ? Number(lote.muertes)
-      : Math.max(0, cantidadInicial - cantidadActual);
-
-  const pctMuerteNum =
-    cantidadInicial > 0 ? (muertes / cantidadInicial) * 100 : 0;
-  const pcrtMuerte = pctMuerteNum.toFixed(2);
-
-  const pesoInicial =
-    lote.peso_inicial != null ? Number(lote.peso_inicial).toFixed(3) : "—";
-  const pesoActual =
-    lote.peso_actual != null ? Number(lote.peso_actual).toFixed(2) : "—";
-  const precioPollito =
-    lote.precio_pollito_base != null
-      ? Number(lote.precio_pollito_base).toFixed(2)
-      : "—";
-  const costoProduccion =
-    lote.costo_produccion != null
-      ? Number(lote.costo_produccion).toFixed(2)
-      : "—";
-  const diasProd =
-    lote.dias_produccion != null ? Number(lote.dias_produccion) : 0;
-  const loteIdFormateado =
+    lote.muertes != null ? Number(lote.muertes) : Math.max(0, inicial - actual);
+  const pctMuerte = inicial > 0 ? (muertes / inicial) * 100 : 0;
+  const dias = Number(lote.dias_produccion ?? 0);
+  const codigoLote =
     lote.lote_id != null ? String(lote.lote_id).padStart(3, "0") : "—";
 
-  let barraColor = "#16a34a";
-  if (pctMuerteNum > 2) barraColor = "#d97706";
-  if (pctMuerteNum > 5) barraColor = "#dc2626";
+  const nivelRiesgo =
+    pctMuerte > 5 ? "riesgo-alto" : pctMuerte > 2 ? "riesgo-medio" : "riesgo-ok";
 
   return (
-    <div id="contenedor-detalle-lote" className="detalle-container">
-      {/* HEADER */}
-      <div className="detalle-header">
-        <div>
-          <div className="detalle-titulo">
-            Lote #{loteIdFormateado} — {lote.galpon || "Sin galpón"}
-          </div>
-          <div className="detalle-subtitulo">
-            <IconoCasa />
-            <span>{lote.galpon || "—"}</span>
-            <span>•</span>
-            <span>{diasProd} días</span>
-          </div>
-        </div>
-        <div className="detalle-meta">
-          <div className={`status-badge ${estadoClase}`}>{estadoTexto}</div>
-          <div className="dias-badge">{diasProd} días en producción</div>
-        </div>
-      </div>
-
-      {/* CANTIDADES */}
-      <div className="seccion">
-        <div className="seccion-titulo">Cantidades y mortalidad</div>
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-label">Cantidad inicial</div>
-            <div className="stat-value">
-              {cantidadInicial.toLocaleString("es-PE")}
-            </div>
-            <div className="stat-unit">pollitos</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Cantidad actual</div>
-            <div className="stat-value">
-              {cantidadActual.toLocaleString("es-PE")}
-            </div>
-            <div className="stat-unit">pollitos</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Mortalidad</div>
-            <div className="stat-value danger">
-              {muertes.toLocaleString("es-PE")}
-            </div>
-            <div className="stat-unit">aves</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">% Mortalidad</div>
-            <div className="stat-value danger">{pcrtMuerte}%</div>
-            <div className="mortalidad-barra">
-              <div
-                className="mortalidad-barra-fill"
-                style={{
-                  width: `${Math.min(pctMuerteNum * 5, 100)}%`,
-                  background: barraColor,
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* COSTOS Y PESOS */}
-      <div className="seccion">
-        <div className="seccion-titulo">Costos y pesos</div>
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-label">Precio pollito base</div>
-            <div className="stat-value">S/ {precioPollito}</div>
-            <div className="stat-unit">por unidad</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Costo de producción</div>
-            <div className="stat-value">S/ {costoProduccion}</div>
-            <div className="stat-unit">acumulado</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Peso inicial</div>
-            <div className="stat-value">{pesoInicial}</div>
-            <div className="stat-unit">kg</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Peso actual</div>
-            <div className="stat-value">{pesoActual}</div>
-            <div className="stat-unit">kg</div>
-          </div>
-        </div>
-      </div>
-
-      {/* FECHAS */}
-      <div className="seccion">
-        <div className="seccion-titulo">Fechas importantes</div>
-        <div className="fechas-row">
-          <div className="fecha-card">
-            <div className="fecha-icon-wrap entrada">
-              <IconoCalendario />
-            </div>
-            <div>
-              <div className="fecha-label">Fecha de ingreso</div>
-              <div className="fecha-value">{fechaIngreso || "—"}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* INFORMACIÓN GENERAL */}
-      <div className="seccion">
-        <div className="seccion-titulo">Información general</div>
-        <div className="info-grid">
-          <div className="info-item">
-            <span className="info-label">ID del lote</span>
-            <span className="info-value">#{loteIdFormateado}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Galpón asignado</span>
-            <span className="info-value">{lote.galpon || "—"}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Estado</span>
-            <span className={`info-value estado-texto ${estadoClase}`}>
-              {estadoTexto}
+    <section className="gen-sheet">
+      {/* Encabezado tipo ficha operativa */}
+      <div className="gen-hero">
+        <div className="gen-hero-main">
+          <div className="gen-eyebrow">
+            <span className="gen-codigo">LOTE #{codigoLote}</span>
+            <span className={`gen-estado ${activo ? "is-activo" : "is-inactivo"}`}>
+              {activo ? "Activo" : "Inactivo"}
             </span>
           </div>
-          <div className="info-item">
-            <span className="info-label">Días en producción</span>
-            <span className="info-value">{diasProd} días</span>
-          </div>
+          <h2 className="gen-titulo">{lote.galpon || "Galpón sin asignar"}</h2>
+          <p className="gen-sub">
+            Ingreso: <strong>{formatearFecha(lote.fecha_ingreso)}</strong> · Ciclo actual:{" "}
+            <strong>{dias} días</strong>
+          </p>
+        </div>
+
+        <div className="gen-hero-kpi">
+          <span className="gen-hero-kpi-label">Aves disponibles</span>
+          <strong className="gen-hero-kpi-num">{formatoNumero(actual)}</strong>
+          <span className="gen-hero-kpi-sub">de {formatoNumero(inicial)} iniciales</span>
         </div>
       </div>
-    </div>
+
+      {/* Bloque 1: Población y mortalidad */}
+      <div className="gen-bloque">
+        <div className="gen-bloque-head">
+          <h3>Población y mortalidad</h3>
+          <span className={`gen-pill-riesgo ${nivelRiesgo}`}>
+            Mortalidad {pctMuerte.toFixed(2)}%
+          </span>
+        </div>
+
+        <div className="gen-metricas-4">
+          <article className="gen-card">
+            <span className="gen-label">Cantidad inicial</span>
+            <strong className="gen-valor">{formatoNumero(inicial)}</strong>
+            <span className="gen-meta">pollitos</span>
+          </article>
+
+          <article className="gen-card">
+            <span className="gen-label">Cantidad actual</span>
+            <strong className="gen-valor gen-verde">{formatoNumero(actual)}</strong>
+            <span className="gen-meta">aves vivas</span>
+          </article>
+
+          <article className="gen-card">
+            <span className="gen-label">Bajas acumuladas</span>
+            <strong className="gen-valor gen-rojo">{formatoNumero(muertes)}</strong>
+            <span className="gen-meta">aves</span>
+          </article>
+
+          <article className="gen-card gen-card-barra">
+            <div className="gen-barra-top">
+              <span className="gen-label">% Mortalidad</span>
+              <strong className={`gen-pct ${nivelRiesgo}`}>
+                {pctMuerte.toFixed(2)}%
+              </strong>
+            </div>
+            <div className="gen-barra-track">
+              <div
+                className={`gen-barra-fill ${nivelRiesgo}`}
+                style={{ width: `${Math.min(pctMuerte * 6, 100)}%` }}
+              />
+            </div>
+            <span className="gen-meta">Umbral alerta: &gt; 2% · Crítico: &gt; 5%</span>
+          </article>
+        </div>
+      </div>
+
+      {/* Bloque 2: Economía y desarrollo de peso */}
+      <div className="gen-bloque">
+        <div className="gen-bloque-head">
+          <h3>Costos y desarrollo de peso</h3>
+        </div>
+
+        <div className="gen-metricas-4">
+          <article className="gen-card">
+            <span className="gen-label">Precio pollito base</span>
+            <strong className="gen-valor">{formatoMoneda(lote.precio_pollito_base)}</strong>
+            <span className="gen-meta">por unidad</span>
+          </article>
+
+          <article className="gen-card">
+            <span className="gen-label">Costo de producción</span>
+            <strong className="gen-valor gen-primario">
+              {formatoMoneda(lote.costo_produccion)}
+            </strong>
+            <span className="gen-meta">acumulado del lote</span>
+          </article>
+
+          <article className="gen-card">
+            <span className="gen-label">Peso inicial</span>
+            <strong className="gen-valor">{formatoNumero(lote.peso_inicial, 3)}</strong>
+            <span className="gen-meta">kg promedio</span>
+          </article>
+
+          <article className="gen-card">
+            <span className="gen-label">Peso actual</span>
+            <strong className="gen-valor">{formatoNumero(lote.peso_actual, 2)}</strong>
+            <span className="gen-meta">kg promedio</span>
+          </article>
+        </div>
+      </div>
+
+      {/* Bloque 3: Ficha técnica */}
+      <div className="gen-bloque">
+        <div className="gen-bloque-head">
+          <h3>Ficha del lote</h3>
+        </div>
+        <dl className="gen-ficha">
+          <div className="gen-ficha-item">
+            <dt>Identificador</dt>
+            <dd>#{codigoLote}</dd>
+          </div>
+          <div className="gen-ficha-item">
+            <dt>Galpón</dt>
+            <dd>{lote.galpon || "—"}</dd>
+          </div>
+          <div className="gen-ficha-item">
+            <dt>Fecha de ingreso</dt>
+            <dd>{formatearFecha(lote.fecha_ingreso)}</dd>
+          </div>
+          <div className="gen-ficha-item">
+            <dt>Días de producción</dt>
+            <dd>{dias} días</dd>
+          </div>
+          <div className="gen-ficha-item">
+            <dt>Estado operativo</dt>
+            <dd className={activo ? "gen-verde" : "gen-muted"}>
+              {activo ? "Activo" : "Inactivo"}
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </section>
   );
 }
 
@@ -232,163 +192,123 @@ export default function General({ idLote, onVolver }) {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [tabActiva, setTabActiva] = useState("general");
+  const [toast, setToast] = useState({ visible: false, mensaje: "", esError: false });
 
-  const [toast, setToast] = useState({
-    visible: false,
-    mensaje: "",
-    esError: false,
-  });
-
-  const toastTimerRef = useRef(null);
-  const mountedRef = useRef(true);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    };
-  }, []);
-
-  const mostrarToast = useCallback((mensaje, esError = false) => {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  const notificar = useCallback((mensaje, esError = false) => {
     setToast({ visible: true, mensaje, esError });
-    toastTimerRef.current = setTimeout(() => {
-      if (mountedRef.current) {
-        setToast((prev) => ({ ...prev, visible: false }));
-      }
-    }, 3200);
   }, []);
 
   useEffect(() => {
-    let active = true;
+    if (!toast.visible) return;
+    const timer = setTimeout(() => {
+      setToast((prev) => ({ ...prev, visible: false }));
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [toast.visible]);
 
-    async function cargarDetalle() {
-      if (!idLote) {
-        setCargando(false);
-        setError("ID de lote no especificado");
-        mostrarToast("ID de lote no especificado", true);
-        return;
-      }
-
-      setCargando(true);
-      setError(null);
-
-      try {
-        const datos = await apiServer(`lotes/${idLote}`);
-        if (!active) return;
-        const detalle = datos?.data ?? datos;
-        if (!detalle || typeof detalle !== "object") {
-          throw new Error("Respuesta vacía del servidor");
-        }
-        setInfoLote(detalle);
-      } catch (err) {
-        if (!active) return;
-        console.error("Error al cargar detalle del lote:", err);
-        setError("Verifica que el ID sea correcto o intenta más tarde.");
-        mostrarToast("Error al cargar el detalle del lote", true);
-      } finally {
-        if (active) setCargando(false);
-      }
+  useEffect(() => {
+    if (!idLote) {
+      setCargando(false);
+      setError("No se recibió un ID de lote válido.");
+      return;
     }
 
-    cargarDetalle();
+    let activo = true;
+    setCargando(true);
+    setError(null);
+
+    apiServer(`lotes/${idLote}`)
+      .then((res) => {
+        if (!activo) return;
+        if (res && typeof res === "object" && res.success === false) {
+          throw new Error(res.message || "No se pudo obtener el lote.");
+        }
+        const detalle = res?.data ?? res;
+        if (!detalle || typeof detalle !== "object") {
+          throw new Error("El lote solicitado no devolvió información.");
+        }
+        setInfoLote(detalle);
+      })
+      .catch((err) => {
+        if (!activo) return;
+        const msg = err?.message || "Error al consultar el lote en el servidor.";
+        setError(msg);
+        notificar(msg, true);
+      })
+      .finally(() => {
+        if (activo) setCargando(false);
+      });
+
     return () => {
-      active = false;
+      activo = false;
     };
-  }, [idLote, mostrarToast]);
+  }, [idLote, notificar]);
 
   return (
-    <main className="main-container">
+    <main className="gen-shell">
       <NavLote
         idLote={idLote}
+        nombreGalpon={infoLote?.galpon}
         tabActiva={tabActiva}
         onCambiarTab={setTabActiva}
         onVolver={onVolver}
       />
 
-      {tabActiva === "general" && (
-        <>
-          {cargando && (
-            <div id="estado-carga" className="skeleton-detalle">
-              <div className="skeleton-header">
-                <div className="skeleton-title" />
-                <div className="skeleton-badge" />
+      <div className="gen-body">
+        {tabActiva === "general" && (
+          <>
+            {cargando && (
+              <div className="gen-skeleton" aria-busy="true">
+                <div className="sk-box sk-hero" />
+                <div className="sk-grid-4">
+                  <div className="sk-box sk-card" />
+                  <div className="sk-box sk-card" />
+                  <div className="sk-box sk-card" />
+                  <div className="sk-box sk-card" />
+                </div>
+                <div className="sk-box sk-panel" />
               </div>
-              <div className="skeleton-stats">
-                <div className="skeleton-stat" />
-                <div className="skeleton-stat" />
-                <div className="skeleton-stat" />
-                <div className="skeleton-stat" />
+            )}
+
+            {!cargando && error && (
+              <div className="gen-vacio">
+                <h3>No se pudo cargar el lote</h3>
+                <p>{error}</p>
+                {typeof onVolver === "function" && (
+                  <button type="button" className="gen-btn-volver" onClick={onVolver}>
+                    ← Volver a lotes
+                  </button>
+                )}
               </div>
-              <div className="skeleton-section" />
-              <div className="skeleton-section" />
-            </div>
-          )}
+            )}
 
-          {!cargando && error && (
-            <div id="estado-error" className="estado-vacio">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-              <h3>No se pudo cargar el lote</h3>
-              <p>{error}</p>
-              {typeof onVolver === "function" && (
-                <button type="button" className="btn-volver" onClick={onVolver}>
-                  ← Volver a lotes
-                </button>
-              )}
-            </div>
-          )}
+            {!cargando && !error && infoLote && <DetalleGeneral lote={infoLote} />}
+          </>
+        )}
 
-          {!cargando && !error && infoLote && <DetalleGeneral lote={infoLote} />}
-        </>
-      )}
+        {tabActiva === "gastos" && <Gastos idLote={idLote} />}
+        {tabActiva === "pesajes" && <Pesos idLote={idLote} />}
+        {tabActiva === "registros" && <Registros idLote={idLote} />}
 
-      {tabActiva === "gastos" && (
-        <div className="estado-vacio">
-          <Gastos idLote={idLote} />
-        </div>
-      )}
+        {["kpi", "advertencias", "monitoreo"].includes(tabActiva) && (
+          <div className="gen-vacio">
+            <h3>Sección en preparación</h3>
+            <p>
+              La vista de <strong>{tabActiva}</strong> para el lote #{idLote} aún no está
+              conectada.
+            </p>
+          </div>
+        )}
+      </div>
 
-      {tabActiva === "pesajes" && (
-        <div className="estado-vacio">
-          Mostrar el historial de pesajes del lote seleccionado
-          <Pesos idLote={idLote} />
-        </div>
-      )}
-
-      {tabActiva === "registros" && (
-        <div className="estado-vacio">
-          Mostrar historial de registros del lote seleccionado
-          <Registros idLote={idLote} />
-        </div>
-      )}
-
-      {/* ===== TOAST ===== */}
       <div
-        className={`toast ${toast.visible ? "show" : ""} ${
-          toast.esError ? "error" : ""
+        role="status"
+        aria-live="polite"
+        className={`gen-toast ${toast.visible ? "is-visible" : ""} ${
+          toast.esError ? "is-error" : ""
         }`}
       >
-        <svg
-          className="toast-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        >
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-        <span>{toast.mensaje}</span>
+        {toast.mensaje}
       </div>
     </main>
   );

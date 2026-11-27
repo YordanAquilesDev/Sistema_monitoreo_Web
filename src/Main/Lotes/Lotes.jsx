@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiServer } from "../../utils/apiServer";
 import CardLote from "./CardLote";
-import "./Lotes.css";
 import General from "./General/General";
+import "./Lotes.css";
 
 const FORM_INICIAL = {
     lote_id: "",
@@ -14,11 +14,34 @@ const FORM_INICIAL = {
     peso_inicial: "",
 };
 
-function extraerLista(data) {
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data?.array)) return data.array;
-    if (Array.isArray(data?.data)) return data.data;
+const obtenerHoyISO = () => new Date().toISOString().split("T")[0];
+
+function extraerLista(respuesta) {
+    const payload = respuesta?.data ?? respuesta;
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.array)) return payload.array;
+    if (Array.isArray(payload?.data)) return payload.data;
     return [];
+}
+
+function construirPayloadLote(form) {
+    const cantidadInicial = parseInt(form.cantidad_inicial, 10) || 0;
+    const pesoInicial = parseFloat(form.peso_inicial) || 0;
+
+    return {
+        lote_id: Number.isNaN(Number(form.lote_id.trim()))
+            ? form.lote_id.trim()
+            : Number(form.lote_id.trim()),
+        galpon: form.galpon.trim(),
+        fecha_ingreso: form.fecha_ingreso,
+        cantidad_inicial: cantidadInicial,
+        cantidad_actual: cantidadInicial,
+        precio_pollito_base: parseFloat(form.precio_pollito_base) || 0,
+        costo_produccion: parseFloat(form.costo_produccion) || 0,
+        peso_inicial: pesoInicial,
+        peso_actual: pesoInicial,
+        estado: true,
+    };
 }
 
 export default function Lotes() {
@@ -38,8 +61,6 @@ export default function Lotes() {
         esError: false,
     });
 
-
-
     const toastTimerRef = useRef(null);
     const mountedRef = useRef(true);
 
@@ -47,6 +68,7 @@ export default function Lotes() {
         mountedRef.current = true;
         return () => {
             mountedRef.current = false;
+            document.body.style.overflow = "";
             if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
         };
     }, []);
@@ -65,13 +87,16 @@ export default function Lotes() {
         setCargando(true);
         setError(null);
         try {
-            const datos = await apiServer("lotes");
+            const respuesta = await apiServer("lotes");
             if (!mountedRef.current) return;
-            setListaLotes(extraerLista(datos));
+            if (respuesta && respuesta.success === false) {
+                throw new Error(respuesta.message || "No se pudieron obtener los lotes.");
+            }
+            setListaLotes(extraerLista(respuesta));
         } catch (err) {
             if (!mountedRef.current) return;
             console.error("Error al cargar lotes:", err);
-            setError("No se pudieron obtener los lotes.");
+            setError(err.message || "No se pudieron obtener los lotes.");
         } finally {
             if (mountedRef.current) setCargando(false);
         }
@@ -89,13 +114,14 @@ export default function Lotes() {
     }, []);
 
     const abrirModal = async () => {
-        const hoy = new Date().toISOString().split("T")[0];
-        setForm({ ...FORM_INICIAL, fecha_ingreso: hoy });
+        setForm({ ...FORM_INICIAL, fecha_ingreso: obtenerHoyISO() });
         setModalAbierto(true);
         document.body.style.overflow = "hidden";
 
+        if (galpones.length > 0) return;
+
         try {
-            const resGalpones = await Promise.resolve(apiServer("galpones"));
+            const resGalpones = await apiServer("galpones");
             if (!mountedRef.current) return;
             setGalpones(extraerLista(resGalpones));
         } catch (err) {
@@ -119,57 +145,42 @@ export default function Lotes() {
 
     const guardarNuevoLote = async (e) => {
         e.preventDefault();
+        const payload = construirPayloadLote(form);
 
-        const payload = {
-            lote_id: form.lote_id.trim(),
-            galpon: form.galpon.trim(),
-            fecha_ingreso: form.fecha_ingreso,
-            cantidad_inicial: parseInt(form.cantidad_inicial, 10) || 0,
-            cantidad_actual: parseInt(form.cantidad_inicial, 10) || 0,
-            precio_pollito_base: parseFloat(form.precio_pollito_base) || 0,
-            costo_produccion: parseFloat(form.costo_produccion) || 0,
-            peso_inicial: parseFloat(form.peso_inicial) || 0,
-            peso_actual: parseFloat(form.peso_inicial) || 0,
-            estado: true,
-        };
-
-        if (!payload.lote_id || !payload.galpon || !payload.cantidad_inicial) {
-            mostrarToast("Completa ID de lote, galpón y cantidad inicial", true);
+        if (!form.lote_id.trim() || !payload.galpon || payload.cantidad_inicial <= 0) {
+            mostrarToast("Completa ID de lote, galpón y una cantidad inicial mayor a 0", true);
             return;
         }
 
         setGuardando(true);
         try {
-            await apiServer("lotes", {
+            const respuesta = await apiServer("lotes/nuevo", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
 
             if (!mountedRef.current) return;
+            if (respuesta && respuesta.success === false) {
+                throw new Error(respuesta.message || "No se pudo guardar el lote");
+            }
+
             cerrarModal();
             await cargarLotes();
-            mostrarToast("Lote registrado correctamente");
+            mostrarToast(respuesta?.message || "Lote registrado correctamente");
         } catch (err) {
             if (!mountedRef.current) return;
             console.error("Error al guardar lote:", err);
-            mostrarToast("No se pudo guardar el lote", true);
+            mostrarToast(err.message || "No se pudo guardar el lote", true);
             setGuardando(false);
         }
     };
-    
-    const handleSeleccionar = (lote) => {
-        setLoteSeleccionado(lote);
-    };
-    const handleVolver = () => {
-        setLoteSeleccionado(null);
-    }
+
+    const handleSeleccionar = (lote) => setLoteSeleccionado(lote);
+    const handleVolver = () => setLoteSeleccionado(null);
 
     if (loteSeleccionado) {
-        return (
-            <General idLote={loteSeleccionado.lote_id}
-                onVolver={handleVolver} />
-        )
+        return <General idLote={loteSeleccionado.lote_id} onVolver={handleVolver} />;
     }
 
     const textoContador = cargando
@@ -178,7 +189,7 @@ export default function Lotes() {
             ? "Error de conexión"
             : listaLotes.length === 0
                 ? "No hay lotes registrados"
-                : `${listaLotes.length} lote${listaLotes.length === 1 ? "" : "s"} en monitoreo`;
+                : `${listaLotes.length} ${listaLotes.length === 1 ? "lote" : "lotes"} en monitoreo`;
 
     return (
         <main className="main-container">
@@ -215,6 +226,9 @@ export default function Lotes() {
                 <div className="estado-vacio">
                     <h3>Error al cargar lotes</h3>
                     <p>{error}</p>
+                    <button type="button" className="btn-nuevo" onClick={cargarLotes}>
+                        Reintentar
+                    </button>
                 </div>
             )}
 
@@ -269,7 +283,7 @@ export default function Lotes() {
                                     id="lote_id"
                                     name="lote_id"
                                     className="form-input"
-                                    placeholder="Ej. LOTE-001"
+                                    placeholder="Ej. 101 o LOTE-001"
                                     value={form.lote_id}
                                     onChange={manejarCambio}
                                     required
