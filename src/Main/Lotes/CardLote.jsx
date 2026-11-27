@@ -33,7 +33,7 @@ export default function CardLote({ lote, index = 0, onSeleccionar }) {
     <article
       className="lote-card"
       style={{ animationDelay: `${index * 0.06}s` }}
-      onClick={() => typeof onSeleccionar === "function" && onSeleccionar(lote)}
+       onClick={() => typeof onSeleccionar === "function" && onSeleccionar(lote)}
     >
       <div className="card-body">
         <div className="card-header-row">
