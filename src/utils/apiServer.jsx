@@ -35,20 +35,3 @@ export async function apiServer(enpoint, { method = "GET", body = null, token = 
 
 }
 
-
-export async function probarPost() {
-    const data ={
-        id_galpon: null,
-        capacidad: 120,
-        area: 123,
-        tipo_ventilacion: "NATURAL",
-        estado: true
-    }
-   
-   try{
-    const res= await apiServer("galpones", {method: "POST",body:data});
-    console.log("RESPUESTA", res);
-   }catch(error){
-    console.log("ERROR", error);
-   }
-}

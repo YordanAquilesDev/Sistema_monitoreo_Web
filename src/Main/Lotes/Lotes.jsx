@@ -4,17 +4,16 @@ import CardLote from "./CardLote";
 import General from "./General/General";
 import "./Lotes.css";
 
+const obtenerHoyISO = () => new Date().toISOString().split("T")[0];
+
 const FORM_INICIAL = {
-    lote_id: "",
+    id_galpon: "",
     galpon: "",
-    fecha_ingreso: "",
+    fecha_ingreso: obtenerHoyISO(),
     cantidad_inicial: "",
     precio_pollito_base: "",
-    costo_produccion: "",
     peso_inicial: "",
 };
-
-const obtenerHoyISO = () => new Date().toISOString().split("T")[0];
 
 function extraerLista(respuesta) {
     const payload = respuesta?.data ?? respuesta;
@@ -24,20 +23,37 @@ function extraerLista(respuesta) {
     return [];
 }
 
-function construirPayloadLote(form) {
+function obtenerEtiquetaGalpon(galpon, idx) {
+    const id = galpon?.id_galpon ?? galpon?.id ?? idx + 1;
+    const base = galpon?.nombre ?? galpon?.galpon ?? `Galpón #${id}`;
+    const detalles = [
+        galpon?.capacidad != null ? `Cap. ${galpon.capacidad}` : null,
+        galpon?.tipo_ventilacion ? galpon.tipo_ventilacion : null,
+        galpon?.estado === false ? "Inactivo" : null,
+    ].filter(Boolean);
+
+    return detalles.length > 0 ? `${base} (${detalles.join(" · ")})` : base;
+}
+
+function construirPayloadLote(form, galponSeleccionado) {
     const cantidadInicial = parseInt(form.cantidad_inicial, 10) || 0;
     const pesoInicial = parseFloat(form.peso_inicial) || 0;
+    const idGalponNum = form.id_galpon !== "" ? Number(form.id_galpon) : 0;
+
+    const galponPayload = {
+        id_galpon: galponSeleccionado?.id_galpon ?? (Number.isNaN(idGalponNum) ? 0 : idGalponNum),
+        capacidad: Number(galponSeleccionado?.capacidad) || 0,
+        area: Number(galponSeleccionado?.area) || 0,
+        tipo_ventilacion: galponSeleccionado?.tipo_ventilacion ?? "NATURAL",
+        estado: galponSeleccionado?.estado ?? true,
+    };
 
     return {
-        lote_id: Number.isNaN(Number(form.lote_id.trim()))
-            ? form.lote_id.trim()
-            : Number(form.lote_id.trim()),
-        galpon: form.galpon.trim(),
-        fecha_ingreso: form.fecha_ingreso,
+        galpon: galponPayload,
+        fecha_ingreso: form.fecha_ingreso || obtenerHoyISO(),
         cantidad_inicial: cantidadInicial,
         cantidad_actual: cantidadInicial,
         precio_pollito_base: parseFloat(form.precio_pollito_base) || 0,
-        costo_produccion: parseFloat(form.costo_produccion) || 0,
         peso_inicial: pesoInicial,
         peso_actual: pesoInicial,
         estado: true,
@@ -50,6 +66,7 @@ export default function Lotes() {
     const [error, setError] = useState(null);
 
     const [galpones, setGalpones] = useState([]);
+    const [cargandoGalpones, setCargandoGalpones] = useState(false);
     const [modalAbierto, setModalAbierto] = useState(false);
     const [guardando, setGuardando] = useState(false);
     const [form, setForm] = useState(FORM_INICIAL);
@@ -108,24 +125,36 @@ export default function Lotes() {
 
     const cerrarModal = useCallback(() => {
         setModalAbierto(false);
-        setForm(FORM_INICIAL);
+        setForm({ ...FORM_INICIAL, fecha_ingreso: obtenerHoyISO() });
         setGuardando(false);
         document.body.style.overflow = "";
     }, []);
+
+    const cargarGalpones = useCallback(async () => {
+        setCargandoGalpones(true);
+        try {
+            const resGalpones = await apiServer("galpones");
+            if (!mountedRef.current) return;
+            if (resGalpones && resGalpones.success === false) {
+                throw new Error(resGalpones.message || "No se pudieron cargar los galpones.");
+            }
+            setGalpones(extraerLista(resGalpones));
+        } catch (err) {
+            if (!mountedRef.current) return;
+            console.error("Error al cargar galpones:", err);
+            mostrarToast(err.message || "No se pudieron cargar los galpones", true);
+        } finally {
+            if (mountedRef.current) setCargandoGalpones(false);
+        }
+    }, [mostrarToast]);
 
     const abrirModal = async () => {
         setForm({ ...FORM_INICIAL, fecha_ingreso: obtenerHoyISO() });
         setModalAbierto(true);
         document.body.style.overflow = "hidden";
 
-        if (galpones.length > 0) return;
-
-        try {
-            const resGalpones = await apiServer("galpones");
-            if (!mountedRef.current) return;
-            setGalpones(extraerLista(resGalpones));
-        } catch (err) {
-            console.error("Error al cargar galpones:", err);
+        if (galpones.length === 0) {
+            await cargarGalpones();
         }
     };
 
@@ -143,12 +172,38 @@ export default function Lotes() {
         setForm((prev) => ({ ...prev, [name]: value }));
     };
 
+    const manejarSeleccionGalpon = (e) => {
+        const valorSeleccionado = e.target.value;
+        const galponEncontrado = galpones.find(
+            (g, idx) => String(g.id_galpon ?? g.id ?? idx) === valorSeleccionado
+        );
+
+        const nombreGalpon = galponEncontrado
+            ? (galponEncontrado.nombre ?? galponEncontrado.galpon ?? `Galpón #${galponEncontrado.id_galpon ?? valorSeleccionado}`)
+            : "";
+
+        setForm((prev) => ({
+            ...prev,
+            id_galpon: valorSeleccionado,
+            galpon: nombreGalpon,
+        }));
+    };
+
     const guardarNuevoLote = async (e) => {
         e.preventDefault();
         const payload = construirPayloadLote(form);
+        console.log(payload);
 
-        if (!form.lote_id.trim() || !payload.galpon || payload.cantidad_inicial <= 0) {
-            mostrarToast("Completa ID de lote, galpón y una cantidad inicial mayor a 0", true);
+        if (!form.id_galpon || payload.cantidad_inicial <= 0) {
+            mostrarToast("Selecciona un galpón e ingresa una cantidad inicial mayor a 0", true);
+            return;
+        }
+
+        const galponSeleccionado = galpones.find(
+            (g, idx) => String(g.id_galpon ?? g.id ?? idx) === String(form.id_galpon)
+        );
+        if (galponSeleccionado && galponSeleccionado.capacidad > 0 && payload.cantidad_inicial > galponSeleccionado.capacidad) {
+            mostrarToast(`La cantidad excede la capacidad del galpón (${galponSeleccionado.capacidad})`, true);
             return;
         }
 
@@ -277,53 +332,29 @@ export default function Lotes() {
 
                         <form className="form-grid" onSubmit={guardarNuevoLote}>
                             <div className="form-group">
-                                <label className="form-label" htmlFor="lote_id">Código / ID lote *</label>
-                                <input
-                                    type="text"
-                                    id="lote_id"
-                                    name="lote_id"
-                                    className="form-input"
-                                    placeholder="Ej. 101 o LOTE-001"
-                                    value={form.lote_id}
-                                    onChange={manejarCambio}
+                                <label className="form-label" htmlFor="id_galpon">Galpón *</label>
+                                <select
+                                    id="id_galpon"
+                                    name="id_galpon"
+                                    className="form-select"
+                                    value={form.id_galpon}
+                                    onChange={manejarSeleccionGalpon}
+                                    disabled={cargandoGalpones}
                                     required
                                     autoFocus
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label" htmlFor="galpon">Galpón *</label>
-                                {galpones.length > 0 ? (
-                                    <select
-                                        id="galpon"
-                                        name="galpon"
-                                        className="form-select"
-                                        value={form.galpon}
-                                        onChange={manejarCambio}
-                                        required
-                                    >
-                                        <option value="">Seleccione un galpón</option>
-                                        {galpones.map((g, idx) => {
-                                            const nombreGalpon = g.nombre ?? g.galpon ?? `Galpón ${idx + 1}`;
-                                            return (
-                                                <option key={g.id ?? g.id_galpon ?? idx} value={nombreGalpon}>
-                                                    {nombreGalpon}
-                                                </option>
-                                            );
-                                        })}
-                                    </select>
-                                ) : (
-                                    <input
-                                        type="text"
-                                        id="galpon"
-                                        name="galpon"
-                                        className="form-input"
-                                        placeholder="Ej. Galpón Norte A"
-                                        value={form.galpon}
-                                        onChange={manejarCambio}
-                                        required
-                                    />
-                                )}
+                                >
+                                    <option value="">
+                                        {cargandoGalpones ? "Cargando galpones..." : "Seleccione un galpón"}
+                                    </option>
+                                    {galpones.map((g, idx) => {
+                                        const valorId = String(g.id_galpon ?? g.id ?? idx);
+                                        return (
+                                            <option key={valorId} value={valorId}>
+                                                {obtenerEtiquetaGalpon(g, idx)}
+                                            </option>
+                                        );
+                                    })}
+                                </select>
                             </div>
 
                             <div className="form-group">
@@ -370,21 +401,6 @@ export default function Lotes() {
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label" htmlFor="costo_produccion">Costo producción (S/)</label>
-                                <input
-                                    type="number"
-                                    id="costo_produccion"
-                                    name="costo_produccion"
-                                    className="form-input"
-                                    step="0.01"
-                                    min="0"
-                                    placeholder="0.00"
-                                    value={form.costo_produccion}
-                                    onChange={manejarCambio}
-                                />
-                            </div>
-
-                            <div className="form-group full-width">
                                 <label className="form-label" htmlFor="peso_inicial">Peso inicial (kg)</label>
                                 <input
                                     type="number"
