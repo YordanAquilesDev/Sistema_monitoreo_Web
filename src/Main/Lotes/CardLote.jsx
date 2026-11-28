@@ -1,5 +1,12 @@
 export default function CardLote({ lote, index = 0, onSeleccionar }) {
   if (!lote) return null;
+  function formatearGalpon(galpon) {
+    if (!galpon) return "Sin galpón";
+    if (typeof galpon === "string") return galpon;
+    const id = galpon.id_galpon ?? "";
+    const ventilacion = galpon.tipo_ventilacion ? ` · ${galpon.tipo_ventilacion}` : "";
+    return id ? `Galpón #${id}${ventilacion}` : `Galpón${ventilacion}`;
+}
 
   const {
     lote_id,
@@ -43,7 +50,7 @@ export default function CardLote({ lote, index = 0, onSeleccionar }) {
           </span>
         </div>
 
-        <h3 className="card-name">{galpon || "Galpón sin asignar"}</h3>
+        <h3>{formatearGalpon(lote.galpon)}</h3>
 
         <div className="lote-info-grid">
           <div className="info-item">

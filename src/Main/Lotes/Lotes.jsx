@@ -105,6 +105,7 @@ export default function Lotes() {
         setError(null);
         try {
             const respuesta = await apiServer("lotes");
+            console.log(respuesta);
             if (!mountedRef.current) return;
             if (respuesta && respuesta.success === false) {
                 throw new Error(respuesta.message || "No se pudieron obtener los lotes.");
